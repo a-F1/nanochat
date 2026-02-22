@@ -22,7 +22,7 @@ import torch.nn.functional as F
 from nanochat.common import get_dist_info, print0
 
 # a-F1
-from nanochat.optim import MuonAdamW, DistMuonAdamW, HybridSED, DistHybridSED
+from nanochat.optim import MuonAdamW, DistMuonAdamW, HybridSED, DistHybridSED, ForgeAdamW, DistForgeAdamW
 
 # Our custom Flash Attention module that automatically uses FA3 on Hopper+ and SDPA fallback elsewhere
 from nanochat.flash_attention import flash_attn
@@ -444,6 +444,61 @@ class GPT(nn.Module):
         
         for group in optimizer.param_groups:
             group["initial_lr"] = group["lr"]
+        return optimizer
+
+    # a-F1
+    def setup_forge_optimizer(self, unembedding_lr=0.004, embedding_lr=0.2, matrix_lr=0.02, weight_decay=0.0, 
+                              adam_betas=(0.8, 0.95), scalar_lr=0.5, 
+                              # === [新增] Forge 需要的迭代超参数 ===
+                              ns_steps=5, expand_steps=1):
+        
+        model_dim = self.config.n_embd
+        ddp, rank, local_rank, world_size = get_dist_info()
+
+        # Separate out all parameters into groups
+        matrix_params = list(self.transformer.h.parameters())
+        value_embeds_params = list(self.value_embeds.parameters())
+        embedding_params = list(self.transformer.wte.parameters())
+        lm_head_params = list(self.lm_head.parameters())
+        resid_params = [self.resid_lambdas]
+        x0_params = [self.x0_lambdas]
+        assert len(list(self.parameters())) == len(matrix_params) + len(embedding_params) + len(lm_head_params) + len(value_embeds_params) + len(resid_params) + len(x0_params)
+
+        # Scale the LR for the AdamW parameters by ∝1/√dmodel (tuned for 768 dim model)
+        dmodel_lr_scale = (model_dim / 768) ** -0.5
+        print0(f"Scaling the LR for the AdamW parameters ∝1/√({model_dim}/768) = {dmodel_lr_scale:.6f}")
+
+        # Build param_groups with all required fields explicit
+        param_groups = [
+            # AdamW groups (embeddings, lm_head, scalars)
+            dict(kind='adamw', params=lm_head_params, lr=unembedding_lr * dmodel_lr_scale, betas=adam_betas, eps=1e-10, weight_decay=0.0),
+            dict(kind='adamw', params=embedding_params, lr=embedding_lr * dmodel_lr_scale, betas=adam_betas, eps=1e-10, weight_decay=0.0),
+            dict(kind='adamw', params=value_embeds_params, lr=embedding_lr * dmodel_lr_scale, betas=adam_betas, eps=1e-10, weight_decay=0.0),
+            dict(kind='adamw', params=resid_params, lr=scalar_lr * 0.01, betas=adam_betas, eps=1e-10, weight_decay=0.0),
+            dict(kind='adamw', params=x0_params, lr=scalar_lr, betas=(0.96, 0.95), eps=1e-10, weight_decay=0.0),  # higher beta1 for x0
+        ]
+        
+        # Forge groups (matrix params, grouped by shape for stacking)
+        for shape in sorted({p.shape for p in matrix_params}):
+            group_params = [p for p in matrix_params if p.shape == shape]
+            param_groups.append(dict(
+                kind='forge', 
+                params=group_params, 
+                lr=matrix_lr,
+                momentum=0.95, 
+                weight_decay=weight_decay,
+                # === [新增] 传入 Forge 的控制参数 ===
+                ns_steps=ns_steps, 
+                expand_steps=expand_steps 
+            ))
+
+        # === [修改] 使用新的 ForgeAdamW / DistForgeAdamW ===
+        Factory = DistForgeAdamW if ddp else ForgeAdamW
+        optimizer = Factory(param_groups)
+        
+        for group in optimizer.param_groups:
+            group["initial_lr"] = group["lr"]
+            
         return optimizer
 
     def forward(self, idx, targets=None, kv_cache=None, loss_reduction='mean'):

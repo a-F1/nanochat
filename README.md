@@ -180,3 +180,134 @@ If you find nanochat helpful in your research cite simply as:
 ## License
 
 MIT
+
+```
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="d12" \
+    --model-tag="d12" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --final-lr-frac 1.0
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="muon-lr_decay" \
+    --model-tag="muon-lr_decay" \
+    --sample-every=-1 \
+    --save-every=200
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_sed -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="d12" \
+    --model-tag="d12" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --final-lr-frac 1.0 
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_sed -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="sed" \
+    --model-tag="sed" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --final-lr-frac 1.0 
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_sed -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="sed" \
+    --model-tag="sed" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --final-lr-frac 1.0 \
+    --muon-percent 0.5
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_sed -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="muon_0.9-sed_0.1_4-lrdecay" \
+    --model-tag="muon_0.9-sed_0.1_4-lrdecay" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --muon-percent 0.9
+
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_sed -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="muon_0.0-sed_1.0_1-lrdecay" \
+    --model-tag="muon_0.0-sed_1.0_1-lrdecay" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --muon-percent 0.0
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="muon_1.0-sed_0.0_1-lrdecay_0.9" \
+    --model-tag="muon_1.0-sed_0.0_1-lrdecay_0.9" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --warmdown-ratio 0.9
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_sed -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="muon_0.9-sed_0.1_1-lrdecay_0.9" \
+    --model-tag="muon_0.9-sed_0.1_1-lrdecay_0.9" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --muon-percent 0.9 \
+    --warmdown-ratio 0.9
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="muon_1.0-sed_0.0_1-lrdecay_0.1" \
+    --model-tag="muon_1.0-sed_0.0_1-lrdecay_0.1" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --warmdown-ratio 0.1
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_sed -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="muon_0.9-sed_0.1_1-lrdecay_0.1" \
+    --model-tag="muon_0.9-sed_0.1_1-lrdecay_0.1" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --muon-percent 0.9 \
+    --warmdown-ratio 0.1
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_sed -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="sed" \
+    --model-tag="sed" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --muon-percent 0.0
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_forge -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="forge-expand-3" \
+    --model-tag="forge-expand-3" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --expand-steps 3 
+
+OMP_NUM_THREADS=1 torchrun --standalone --nproc_per_node=4 -m scripts.base_train_forge -- \
+    --depth=12 \
+    --core-metric-every=999999 \
+    --run="forge-expand-3" \
+    --model-tag="forge-expand-3" \
+    --sample-every=-1 \
+    --save-every=-1 \
+    --expand-steps 4
+```
